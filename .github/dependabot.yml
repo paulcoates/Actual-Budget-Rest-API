@@ -7,16 +7,3 @@ updates:
     # Check the npm registry for updates every day (weekdays)
     schedule:
       interval: "daily"
-
-  # Enable version updates for Docker
-  - package-ecosystem: "docker"
-    # Look for a `Dockerfile` in the `root` directory
-    directory: "/"
-    # Check for updates once a week
-    schedule:
-      interval: "weekly"
-    # Custom update to allow only updates to node 20.x version
-    constraints:
-      - dependency-name: node
-        version: "20.x"
-        update-type: "increase"
