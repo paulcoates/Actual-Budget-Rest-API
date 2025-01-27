@@ -2,6 +2,10 @@ version: 2
 updates:
   # Enable version updates for npm
   - package-ecosystem: "npm"
+  # attempt to fix npm version to 10.0.0 or higher -- https://stackoverflow.com/questions/65736404/configure-npm-version-for-dependabot
+    ignore:
+    - dependency-name: 'npm'
+      versions: ['<10.0.0', '>=11.0.0']
     # Look for `package.json` and `lock` files in the `root` directory
     directory: "/"
     # Check the npm registry for updates every day (weekdays)
