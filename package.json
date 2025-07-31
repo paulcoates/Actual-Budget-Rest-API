@@ -1,12 +1,48 @@
 {
-  "name": "node-starter",
-  "version": "0.0.0",
+  "name": "actual-budget-webhook-api",
+  "version": "1.0.0",
+  "description": "TypeScript webhook receiver for Actual Budget with UpBank integration",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node index.js"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@actual-app/api": "25.7.1",
-    "express": "^5.1.0"
-  }
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "joi": "^17.11.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.10.5",
+    "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["actual-budget", "webhook", "upbank", "typescript", "express"],
+  "author": "Paul Coates",
+  "license": "MIT"
 }

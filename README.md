@@ -1,53 +1,207 @@
-Project API to create Transactions on 'Actual Budget'
--
+# Actual Budget Webhook API
 
--- Actual Budget link
+A robust, TypeScript-based webhook receiver for [Actual Budget](https://actualbudget.org/) with UpBank integration support.
 
-This project provides a docker image on nodejs 20, that allows consume the 'actual budget node sdk/api' to create transactions on a account.
+## Features
 
-The account must exist on the Actual Server.
+- 🔧 **TypeScript** - Full type safety and modern development experience
+- 🛡️ **Security** - Helmet, CORS, and input validation
+- 📊 **Monitoring** - Structured logging with Winston
+- 🧪 **Testing** - Comprehensive test suite with Jest
+- 🔄 **CI/CD** - Automated testing and Docker builds
+- 🏦 **UpBank Integration** - Process UpBank webhooks automatically
+- 📈 **Health Checks** - Built-in health monitoring endpoints
+- 🐳 **Docker** - Production-ready containerization
 
-Docker Environment params:
+## Quick Start
 
-- SERVER_URL: The url where the 'Actual budget' is hosted, with port.
-- BUDGET_ID: This is the ID from Settings → Show advanced settings → Sync ID
-- SERVER_PASSWORD: This is the password you use to log into the server
+### Using Docker (Recommended)
 
-docker-compose:
-```
+```yaml
 version: "3"
 services:
-
   actual-rest-api:
     image: ghcr.io/paulcoates/actual-budget-rest-api:latest
     restart: always
     container_name: actual-rest-api
-    network_mode: host
     ports:
-      - 8080:8080
+      - "8080:8080"
     environment:
-      # The container is run as the user with this PUID and PGID (user and group id).
-      # - TZ=${TZ} Optional, this avoid date issues for transactions
-      # - GENERATE_UNIC_ID=true 
-      - SERVER_URL=https://actual.myhostserver.com
-      - SERVER_PASSWORD=myActualPassword
-      - BUDGET_ID=xxxxxx-7e2b-404e-8399-ccbf88442328
+      - SERVER_URL=https://actual.yourdomain.com
+      - SERVER_PASSWORD=your-actual-password
+      - BUDGET_ID=your-budget-sync-id
+      # Optional: UpBank integration
+      - UPBANK_TOKEN=your-upbank-api-token
+      - DEFAULT_ACCOUNT_ID=your-default-account-id
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 ```
 
-REST SERVICE PARAMS:
+### Local Development
 
-- accountId: The id of the account to add the transaction. (you can get the id from the URL of the actual UI)
-![Alt text](image.png)
-- amount: The amount of money on cents. For $1 you need to send 100 as value.
-- payee: The payee associated to the transaction, if not exists, the actual creates the payee automatically
-- notes: Notes to add on the transaction
-- transaction_id: The id of the transaction, this is used to avoid duplicated transactions.
+1. **Clone and install dependencies:**
+   ```bash
+   git clone https://github.com/paulcoates/Actual-Budget-Rest-API.git
+   cd Actual-Budget-Rest-API
+   npm install
+   ```
 
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Actual Budget configuration
+   ```
 
-CURL to consume the API:
+3. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+## Configuration
+
+### Required Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `BUDGET_ID` | Your Actual Budget Sync ID (Settings → Advanced → Sync ID) |
+| `SERVER_URL` | URL to your Actual Budget server |
+| `SERVER_PASSWORD` | Password for your Actual Budget server |
+
+### Optional Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `8080` |
+| `NODE_ENV` | Environment mode | `production` |
+| `UPBANK_TOKEN` | UpBank API token for webhook integration | - |
+| `DEFAULT_ACCOUNT_ID` | Default account for UpBank transactions | - |
+
+## API Endpoints
+
+### Health Check
+```http
+GET /api/healthcheck
 ```
-▶ curl --location 'https://actualapi.ts.coates.network/' \
---header 'Content-Type: application/json' \
+
+### Manual Transaction Creation
+```http
+POST /api/transaction
+Content-Type: application/json
+
+{
+  "account_id": "account-uuid",
+  "transaction_date": "2024-01-01T00:00:00.000Z",
+  "amount": 1000,
+  "payee": "Coffee Shop",
+  "notes": "Morning coffee",
+  "imported_id": "unique-transaction-id"
+}
+```
+
+### Get Accounts
+```http
+GET /api/accounts
+```
+
+### UpBank Webhook (if configured)
+```http
+POST /api/webhook/upbank
+Content-Type: application/json
+X-Up-Authenticity-Signature: webhook-signature
+
+{
+  "data": {
+    "type": "webhook-events",
+    "attributes": {
+      "eventType": "TRANSACTION_CREATED"
+    }
+  }
+}
+```
+
+## Development
+
+### Available Scripts
+
+```bash
+npm run build          # Build TypeScript to JavaScript
+npm run start          # Start production server
+npm run dev            # Start development server with hot reload
+npm run test           # Run test suite
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Run tests with coverage report
+npm run lint           # Run ESLint
+npm run lint:fix       # Fix ESLint issues automatically
+npm run type-check     # Run TypeScript type checking
+```
+
+### Project Structure
+
+```
+src/
+├── __tests__/          # Test files
+├── middleware/         # Express middleware
+├── routes/            # API route handlers
+├── services/          # Business logic services
+├── types/             # TypeScript type definitions
+├── utils/             # Utility functions
+└── index.ts           # Application entry point
+```
+
+## Testing
+
+The project includes comprehensive tests covering:
+
+- Unit tests for utilities and services
+- Integration tests for API endpoints
+- Input validation tests
+- Error handling tests
+
+Run tests with coverage:
+```bash
+npm run test:coverage
+```
+
+## UpBank Integration
+
+To enable automatic processing of UpBank transactions:
+
+1. Set up UpBank API access and get your API token
+2. Configure the webhook URL in your UpBank developer console
+3. Set environment variables:
+   ```
+   UPBANK_TOKEN=your-api-token
+   DEFAULT_ACCOUNT_ID=your-actual-account-id
+   ```
+
+The service will automatically:
+- Receive UpBank webhook notifications
+- Fetch transaction details from UpBank API
+- Create corresponding transactions in Actual Budget
+- Prevent duplicates using transaction IDs
+
+## Security Considerations
+
+- Always use HTTPS in production
+- Keep your API tokens and passwords secure
+- Regularly update dependencies
+- Monitor logs for suspicious activity
+- Use webhook signature verification (implement as needed)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Ensure all tests pass and linting is clean
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.
 --data '{
     "account_id": "9cdea6e3-4770-4b3b-8d32-XXXXXX",
     "transaction_date": "2024-04-09",
