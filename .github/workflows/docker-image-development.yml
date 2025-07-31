@@ -9,10 +9,10 @@ jobs:
 
   build:
 
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Get actual-app/api version from package.json
         id: get-version
@@ -21,9 +21,33 @@ jobs:
           echo "ACTUAL_API_VERSION=$ACTUAL_API_VERSION" >> $GITHUB_ENV
           echo "ACTUAL_API_VERSION=$ACTUAL_API_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build and publish a Docker image for ${{ github.repository }}
-        uses: macbre/push-to-ghcr@master
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          image_name: paulcoates/actual-budget-rest-api
-          github_token: ${{ secrets.GHCR_PUBLISH }}
-          image_tag: development
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/paulcoates/actual-budget-rest-api
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=development
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
