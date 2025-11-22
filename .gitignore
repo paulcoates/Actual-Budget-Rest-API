@@ -4,3 +4,4 @@ package-lock.json
 tmp/*
 *.code-workspace
 *.DS_Store
+dist/*
