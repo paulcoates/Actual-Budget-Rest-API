@@ -1,6 +1,5 @@
-FROM node:20-alpine AS builder
+FROM node:24.11.1-alpine AS builder
 
-# Set working directory
 WORKDIR /usr/src/app
 
 # Copy package files
@@ -16,36 +15,37 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:24.11.1-alpine
 
-# Install security updates and dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init tzdata && \
-    apk upgrade --no-cache
+ENV NODE_ENV=production
 
-# Create app directory and user
-RUN mkdir -p /tmp/actual && \
-    addgroup -g 1001 -S nodejs && \
+# Install system dependencies
+RUN apk add --no-cache dumb-init tzdata
+
+# Create data directory
+RUN mkdir -p /tmp/actual
+
+# Create app user
+RUN addgroup -g 1001 -S nodejs && \
     adduser -S actualapi -u 1001
 
-# Set working directory
 WORKDIR /usr/src/app
 
 # Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Change ownership to non-root user
+# Set permissions for the app user
 RUN chown -R actualapi:nodejs /usr/src/app /tmp/actual
 
-# Switch to non-root user
+# Switch to non-root user for security
 USER actualapi
 
-# Expose port
 EXPOSE 8080
 
 # Health check

@@ -61,9 +61,6 @@ Thumbs.db
 # Optional eslint cache
 .eslintcache
 
-# TypeScript cache
-*.tsbuildinfo
-
 # Jest cache
 .jest/
 

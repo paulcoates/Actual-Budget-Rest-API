@@ -1,4 +1,5 @@
 let api = require('@actual-app/api');
+const apiPackage = require('@actual-app/api/package.json');
 const express = require('express');
 const app = express();
 
@@ -20,7 +21,7 @@ async function initializeApi() {
     password: SERVER_PASSWORD,
   })
   .then(() => {
-    console.log("API initialized");
+    console.log("API initialized - v"+apiPackage.version);
     apiInitialized = true;
   })
   .catch((reason) => {
