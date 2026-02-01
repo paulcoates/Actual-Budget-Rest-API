@@ -23,13 +23,14 @@ jest.mock('@/services/actualBudgetService', () => {
 
 jest.mock('../services/upBankService', () => {
   const actual = jest.requireActual('../services/upBankService');
+  const instance = {
+    processWebhook: jest.fn(),
+    validateWebhookSignature: jest.fn(),
+  };
   return {
     ...actual,
     UpBankService: {
-      getInstance: jest.fn(() => ({
-        processWebhook: jest.fn(),
-        validateWebhookSignature: jest.fn(),
-      })),
+      getInstance: jest.fn(() => instance),
     },
   };
 });
@@ -97,7 +98,7 @@ describe('API Routes', () => {
     processWebhookMock.mockResolvedValue(null);
   });
 
-  afterAll(() => {
+  afterEach(() => {
     processWebhookMock?.mockReset();
     validateWebhookSignatureMock?.mockReset();
   });
