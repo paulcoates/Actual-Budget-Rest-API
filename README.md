@@ -34,7 +34,7 @@ services:
       - UPBANK_TOKEN=your-upbank-api-token
       - DEFAULT_ACCOUNT_ID=your-default-account-id
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/healthcheck"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,8 +77,11 @@ services:
 | `PORT` | Server port | `8080` |
 | `NODE_ENV` | Environment mode | `production` |
 | `UPBANK_TOKEN` | UpBank API token for webhook integration | - |
+| `UPBANK_WEBHOOK_SECRET` | UpBank webhook signature verification secret | - |
 | `DEFAULT_ACCOUNT_ID` | Default account for UpBank transactions | - |
-
+| `UPBANK_ACCOUNT_MAP` | JSON mapping of UpBank account IDs to Actual account IDs | - |
+| `UPBANK_VERIFY_WEBHOOK_SIGNATURE` | Verify UpBank webhook signature (set to `false` for local dev only) | `true` |
+| `LOG_SENSITIVE_DATA` | Log request bodies and other sensitive data | `false` |
 ## API Endpoints
 
 ### Health Check
@@ -183,13 +186,19 @@ The service will automatically:
 - Create corresponding transactions in Actual Budget
 - Prevent duplicates using transaction IDs
 
+### Feature Flags
+
+- `UPBANK_VERIFY_WEBHOOK_SIGNATURE` (default `true`): Set to `false` to skip webhook signature verification during local development. Not recommended for production.
+- `LOG_SENSITIVE_DATA` (default `false`): Set to `true` to log request bodies and other potentially sensitive data. Not recommended for production.
+
 ## Security Considerations
 
 - Always use HTTPS in production
 - Keep your API tokens and passwords secure
 - Regularly update dependencies
 - Monitor logs for suspicious activity
-- Use webhook signature verification (implement as needed)
+- Keep webhook signature verification enabled in production
+- Avoid enabling sensitive logging in production
 
 ## Contributing
 

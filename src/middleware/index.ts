@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { isProduction } from '../utils/config';
 import { ApiResponse } from '../types';
 
 export const errorHandler = (
@@ -19,7 +20,7 @@ export const errorHandler = (
   const response: ApiResponse = {
     status: 'error',
     error: 'Internal server error',
-    message: err.message,
+    message: isProduction() ? 'Internal server error' : err.message,
   };
 
   res.status(500).json(response);

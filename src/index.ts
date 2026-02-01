@@ -26,7 +26,12 @@ class App {
     this.app.use(cors());
     
     // Request parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.json({
+      limit: '10mb',
+      verify: (req, _res, buf) => {
+        req.rawBody = buf.toString('utf8');
+      },
+    }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     
     // Logging
@@ -64,43 +69,56 @@ class App {
         logger.info(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
       });
 
-      // Graceful shutdown handlers
-      const gracefulShutdown = async (signal: string): Promise<void> => {
-        logger.info(`Received ${signal}, starting graceful shutdown`);
-        
-        server.close(async () => {
-          logger.info('HTTP server closed');
-          
-          try {
-            await this.actualService.shutdown();
-            logger.info('Actual Budget service shutdown completed');
-            process.exit(0);
-          } catch (error) {
-            logger.error('Error during shutdown:', error);
-            process.exit(1);
-          }
-        });
+      const closeServer = (): Promise<void> => new Promise((resolve) => {
+        server.close(() => resolve());
+      });
 
-        // Force shutdown after 30 seconds
-        setTimeout(() => {
+      const shutdown = async (label: string, exitCode: number, error?: unknown): Promise<void> => {
+        if (error) {
+          logger.error(`${label}:`, error);
+        } else {
+          logger.info(`Received ${label}, starting graceful shutdown`);
+        }
+
+        const forcedShutdownTimer = setTimeout(() => {
           logger.error('Forced shutdown after 30 seconds');
           process.exit(1);
         }, 30000);
+
+        try {
+          await closeServer();
+          logger.info('HTTP server closed');
+        } catch (closeError) {
+          logger.error('Error closing HTTP server:', closeError);
+        }
+
+        let shutdownError: unknown;
+        try {
+          await this.actualService.shutdown();
+          logger.info('Actual Budget service shutdown completed');
+        } catch (shutdownErr) {
+          shutdownError = shutdownErr;
+          logger.error('Error during shutdown:', shutdownErr);
+        } finally {
+          clearTimeout(forcedShutdownTimer);
+          process.exit(shutdownError ? 1 : exitCode);
+        }
+      };
+
+      // Graceful shutdown handlers
+      const gracefulShutdown = async (signal: string): Promise<void> => {
+        await shutdown(signal, 0);
       };
 
       process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
       
       process.on('uncaughtException', async (error: Error) => {
-        logger.error('Uncaught exception:', error);
-        await this.actualService.shutdown();
-        process.exit(1);
+        await shutdown('Uncaught exception', 1, error);
       });
 
       process.on('unhandledRejection', async (reason: unknown) => {
-        logger.error('Unhandled rejection:', reason);
-        await this.actualService.shutdown();
-        process.exit(1);
+        await shutdown('Unhandled rejection', 1, reason);
       });
 
     } catch (error) {

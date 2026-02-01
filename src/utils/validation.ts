@@ -6,8 +6,11 @@ export const transactionSchema = Joi.object({
     'string.empty': 'Account ID is required',
     'any.required': 'Account ID is required',
   }),
-  transaction_date: Joi.string().isoDate().required().messages({
-    'string.isoDate': 'Transaction date must be a valid ISO date',
+  transaction_date: Joi.alternatives().try(
+    Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
+    Joi.string().isoDate()
+  ).required().messages({
+    'alternatives.match': 'Transaction date must be a valid ISO date or YYYY-MM-DD',
     'any.required': 'Transaction date is required',
   }),
   amount: Joi.alternatives().try(
@@ -41,6 +44,16 @@ export const validateTransaction = (data: unknown): {
   }
 
   return { value };
+};
+
+export const normalizeTransactionDate = (transactionDate: string): string => {
+  const value = String(transactionDate).trim();
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  const normalized = match?.[1];
+  if (!normalized) {
+    throw new Error('Transaction date must be a valid ISO date or YYYY-MM-DD');
+  }
+  return normalized;
 };
 
 export const validateAmount = (amount: string | number): number => {

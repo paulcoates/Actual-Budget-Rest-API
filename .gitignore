@@ -28,7 +28,6 @@ pids
 *.pid.lock
 
 # Logs
-logs/
 *.log
 
 # Temporary files

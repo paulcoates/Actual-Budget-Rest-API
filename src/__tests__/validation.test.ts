@@ -39,7 +39,7 @@ describe('Validation Utils', () => {
 
       const result = validateTransaction(invalidTransaction);
       expect(result.error).toBeDefined();
-      expect(result.error).toContain('must be a valid ISO date');
+      expect(result.error).toContain('valid ISO date or YYYY-MM-DD');
     });
 
     it('should accept string amount and convert to number', () => {

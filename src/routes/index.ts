@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { ActualBudgetService } from '../services/actualBudgetService';
-import { UpBankService } from '../services/upBankService';
+import { UpBankService, UpBankWebhookError } from '../services/upBankService';
 import { validateTransaction } from '../utils/validation';
+import { config } from '../utils/config';
 import { logger } from '../utils/logger';
 import { ApiResponse, HealthCheckResponse, TransactionRequest, UpBankWebhook } from '../types';
 
@@ -50,7 +51,11 @@ router.get('/accounts', async (req: Request, res: Response): Promise<void> => {
 // Manual transaction creation endpoint
 router.post('/transaction', async (req: Request, res: Response): Promise<void> => {
   try {
-    logger.info('Manual transaction request received:', req.body);
+    if (config.logSensitiveData) {
+      logger.info('Manual transaction request received:', req.body);
+    } else {
+      logger.info('Manual transaction request received');
+    }
 
     const validation = validateTransaction(req.body);
     if (validation.error) {
@@ -98,15 +103,33 @@ router.post('/webhook/upbank', async (req: Request, res: Response): Promise<void
   try {
     logger.info('UpBank webhook received');
 
+    if (config.logSensitiveData) {
+      logger.info('UpBank webhook payload:', req.body);
+    }
+
     // Validate webhook signature (implement in production)
-    const signature = req.headers['x-up-authenticity-signature'] as string;
-    if (!upBankService.validateWebhookSignature(JSON.stringify(req.body), signature)) {
-      const response: ApiResponse = {
-        status: 'error',
-        error: 'Invalid webhook signature',
-      };
-      res.status(401).json(response);
-      return;
+    if (config.verifyUpBankWebhookSignature) {
+      const signatureHeader = req.headers['x-up-authenticity-signature'];
+      const signature = typeof signatureHeader === 'string' ? signatureHeader : undefined;
+      const rawBody = req.rawBody;
+
+      if (!rawBody) {
+        const response: ApiResponse = {
+          status: 'error',
+          error: 'Missing webhook payload',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (!upBankService.validateWebhookSignature(rawBody, signature)) {
+        const response: ApiResponse = {
+          status: 'error',
+          error: 'Invalid webhook signature',
+        };
+        res.status(401).json(response);
+        return;
+      }
     }
 
     const webhook: UpBankWebhook = req.body;
@@ -153,14 +176,15 @@ router.post('/webhook/upbank', async (req: Request, res: Response): Promise<void
     res.json(response);
   } catch (error) {
     logger.error('Error processing UpBank webhook:', error);
-    
+
+    const statusCode = error instanceof UpBankWebhookError ? error.statusCode : 500;
     const response: ApiResponse = {
       status: 'error',
       error: 'Failed to process webhook',
       message: error instanceof Error ? error.message : 'Unknown error',
     };
 
-    res.status(500).json(response);
+    res.status(statusCode).json(response);
   }
 });
 
@@ -170,7 +194,11 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   
   // Process the same as transaction endpoint
   try {
-    logger.info('Legacy transaction request received:', req.body);
+    if (config.logSensitiveData) {
+      logger.info('Legacy transaction request received:', req.body);
+    } else {
+      logger.info('Legacy transaction request received');
+    }
 
     const validation = validateTransaction(req.body);
     if (validation.error) {

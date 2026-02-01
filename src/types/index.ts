@@ -83,7 +83,11 @@ export interface Config {
   port: number;
   nodeEnv: string;
   upBankToken?: string | undefined;
+  upBankWebhookSecret?: string | undefined;
   defaultAccountId?: string | undefined;
+  upBankAccountMap?: Record<string, string> | undefined;
+  verifyUpBankWebhookSignature: boolean;
+  logSensitiveData: boolean;
 }
 
 export interface ApiResponse<T = any> {

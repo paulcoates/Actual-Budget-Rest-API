@@ -83,6 +83,7 @@ describe('ActualBudgetService', () => {
 
   describe('getAccounts', () => {
     it('should return accounts list', async () => {
+      await service.initialize();
       const accounts = await service.getAccounts();
       expect(Array.isArray(accounts)).toBe(true);
     });

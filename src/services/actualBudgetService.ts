@@ -2,7 +2,7 @@ import * as actual from '@actual-app/api';
 import { Transaction } from '../types';
 import { config } from '../utils/config';
 import { logger } from '../utils/logger';
-import { validateAmount, validateEmpty } from '../utils/validation';
+import { normalizeTransactionDate, validateAmount, validateEmpty } from '../utils/validation';
 
 export class ActualBudgetService {
   private static instance: ActualBudgetService;
@@ -61,10 +61,11 @@ export class ActualBudgetService {
       const validatedAmount = validateAmount(amount);
       const validatedAccountId = validateEmpty('AccountId', accountId);
       const validatedPayee = validateEmpty('Payee', payee);
+      const normalizedDate = normalizeTransactionDate(transactionDate);
 
       const transaction: Transaction = {
         account: validatedAccountId,
-        date: transactionDate,
+        date: normalizedDate,
         amount: validatedAmount,
         payee_name: validatedPayee,
         notes: notes || '',
@@ -72,7 +73,7 @@ export class ActualBudgetService {
       };
 
       logger.info(
-        `Processing transaction: ${transaction.date} - ${transaction.amount} - ${transaction.payee_name} - ${transaction.notes} - ${transaction.imported_id}`
+        `Processing transaction: ${transaction.date} - ${transaction.amount} - ${transaction.payee_name} - ${transaction.notes}${transaction.imported_id ? ` - ${transaction.imported_id}` : ''}`
       );
 
       await actual.importTransactions(validatedAccountId, [transaction]);

@@ -3,6 +3,9 @@ process.env.NODE_ENV = 'test';
 process.env.BUDGET_ID = 'test-budget-id';
 process.env.SERVER_URL = 'http://localhost:5006';
 process.env.SERVER_PASSWORD = 'test-password';
+process.env.UPBANK_TOKEN = 'test-upbank-token';
+process.env.UPBANK_WEBHOOK_SECRET = 'test-upbank-secret';
+process.env.DEFAULT_ACCOUNT_ID = 'actual-account-default';
 
 // Mock console methods to reduce noise in tests
 global.console = {
