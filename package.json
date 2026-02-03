@@ -29,7 +29,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^25.2.0",
     "@types/jest": "^29.5.8",
-    "@types/supertest": "^2.0.16",
+    "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
