@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { config, validateConfig } from './utils/config';
 import { logger } from './utils/logger';
 import { ActualBudgetService } from './services/actualBudgetService';
+import { UpBankService } from './services/upBankService';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware';
 import routes from './routes';
 
@@ -63,6 +64,15 @@ class App {
       // Initialize Actual Budget API
       await this.actualService.initialize();
       logger.info('Actual Budget service initialized');
+
+      // Verify UpBank token if configured (ping endpoint)
+      if (config.upBankToken) {
+        const upBankService = UpBankService.getInstance();
+        const tokenOk = await upBankService.verifyToken();
+        if (!tokenOk) {
+          logger.warn('UpBank token verification failed at startup; webhooks may fail until the token is valid');
+        }
+      }
 
       // Start server
       const server = this.app.listen(config.port, () => {
