@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config, validateConfig } from './utils/config';
 import { logger } from './utils/logger';
+import { isHealthCheckPath } from './utils/healthcheck';
 import { ActualBudgetService } from './services/actualBudgetService';
 import { UpBankService } from './services/upBankService';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware';
@@ -38,7 +39,7 @@ class App {
     // Logging
     if (config.nodeEnv !== 'test') {
       this.app.use(morgan('combined', {
-        skip: (req) => req.path === '/healthcheck' || req.path === '/api/healthcheck',
+        skip: (req) => isHealthCheckPath(req.path),
         stream: { write: (message: string) => logger.info(message.trim()) }
       }));
       this.app.use(requestLogger);

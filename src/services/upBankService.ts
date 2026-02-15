@@ -59,12 +59,16 @@ export class UpBankService {
       logger.warn('UpBank token not configured, skipping token verification');
       return false;
     }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     try {
       const response = await fetch('https://api.up.com.au/api/v1/util/ping', {
         headers: {
           'Authorization': `Bearer ${config.upBankToken}`,
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
       if (response.ok) {
         const data = await response.json() as { meta?: { id?: string; statusEmoji?: string } };
@@ -74,9 +78,15 @@ export class UpBankService {
       logger.error('UpBank token verification failed', { status: response.status, statusText: response.statusText });
       return false;
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error('UpBank token verification request timed out');
+        return false;
+      }
       const cause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : undefined;
       logger.error('UpBank token verification failed (request error)', { error, cause: cause != null ? String(cause) : undefined });
       return false;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

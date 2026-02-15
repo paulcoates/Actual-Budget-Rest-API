@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import { isProduction } from '../utils/config';
+import { isHealthCheckPath } from '../utils/healthcheck';
 import { ApiResponse } from '../types';
 
 export const errorHandler = (
@@ -38,8 +39,7 @@ export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json(response);
 };
 
-const isHealthCheck = (req: Request): boolean =>
-  req.path === '/healthcheck' || req.path === '/api/healthcheck';
+const isHealthCheck = (req: Request): boolean => isHealthCheckPath(req.path);
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
   const start = Date.now();
