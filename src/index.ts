@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config, validateConfig } from './utils/config';
 import { logger } from './utils/logger';
+import { isHealthCheckPath } from './utils/healthcheck';
 import { ActualBudgetService } from './services/actualBudgetService';
+import { UpBankService } from './services/upBankService';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware';
 import routes from './routes';
 
@@ -37,6 +39,7 @@ class App {
     // Logging
     if (config.nodeEnv !== 'test') {
       this.app.use(morgan('combined', {
+        skip: (req) => isHealthCheckPath(req.path),
         stream: { write: (message: string) => logger.info(message.trim()) }
       }));
       this.app.use(requestLogger);
@@ -63,6 +66,15 @@ class App {
       // Initialize Actual Budget API
       await this.actualService.initialize();
       logger.info('Actual Budget service initialized');
+
+      // Verify UpBank token if configured (ping endpoint)
+      if (config.upBankToken) {
+        const upBankService = UpBankService.getInstance();
+        const tokenOk = await upBankService.verifyToken();
+        if (!tokenOk) {
+          logger.warn('UpBank token verification failed at startup; webhooks may fail until the token is valid');
+        }
+      }
 
       // Start server
       const server = this.app.listen(config.port, () => {

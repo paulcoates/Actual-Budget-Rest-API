@@ -27,20 +27,21 @@ export class UpBankService {
 
   public async processWebhook(webhook: UpBankWebhook): Promise<TransactionRequest | null> {
     try {
-      logger.info('Processing UpBank webhook:', { eventType: webhook.data.attributes.eventType });
+      const eventType = webhook.data.attributes.eventType;
+      const transactionId = webhook.data.relationships.transaction?.data?.id;
+      logger.info('Processing UpBank webhook', { eventType, ...(transactionId && { transactionId }) });
 
       // Only process transaction events
-      if (webhook.data.attributes.eventType !== 'TRANSACTION_CREATED') {
+      if (eventType !== 'TRANSACTION_CREATED') {
         logger.info('Ignoring non-transaction webhook event');
         return null;
       }
 
-      // Get transaction details from UpBank API
-      const transactionId = webhook.data.relationships.transaction?.data.id;
       if (!transactionId) {
         throw new UpBankWebhookError('No transaction ID found in webhook', 400);
       }
 
+      // Get transaction details from UpBank API
       const transaction = await this.getTransaction(transactionId);
       return this.convertUpBankToActualTransaction(transaction);
     } catch (error) {
@@ -49,17 +50,59 @@ export class UpBankService {
     }
   }
 
+  /**
+   * Verify the UpBank token by calling the API ping endpoint.
+   * See https://developer.up.com.au/#get_util_ping
+   */
+  public async verifyToken(): Promise<boolean> {
+    if (!config.upBankToken) {
+      logger.warn('UpBank token not configured, skipping token verification');
+      return false;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch('https://api.up.com.au/api/v1/util/ping', {
+        headers: {
+          'Authorization': `Bearer ${config.upBankToken}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+      if (response.ok) {
+        const data = await response.json() as { meta?: { id?: string; statusEmoji?: string } };
+        logger.info('UpBank token verified successfully', { customerId: data.meta?.id });
+        return true;
+      }
+      logger.error('UpBank token verification failed', { status: response.status, statusText: response.statusText });
+      return false;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error('UpBank token verification request timed out');
+        return false;
+      }
+      const cause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : undefined;
+      logger.error('UpBank token verification failed (request error)', { error, cause: cause != null ? String(cause) : undefined });
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   private async getTransaction(transactionId: string): Promise<UpBankTransaction> {
     if (!config.upBankToken) {
       throw new UpBankWebhookError('UpBank token not configured', 500);
     }
+
+    const url = `https://api.up.com.au/api/v1/transactions/${transactionId}`;
 
     const controller = new AbortController();
     const timeoutMs = 10000;
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(`https://api.up.com.au/api/v1/transactions/${transactionId}`, {
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${config.upBankToken}`,
           'Content-Type': 'application/json',
@@ -80,7 +123,8 @@ export class UpBankService {
         throw new UpBankWebhookError('UpBank API request timed out', 504);
       }
 
-      logger.error('Error fetching transaction from UpBank:', error);
+      const cause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : undefined;
+      logger.error('Error fetching transaction from UpBank:', { error, cause: cause != null ? String(cause) : undefined });
       if (error instanceof UpBankWebhookError) {
         throw error;
       }
