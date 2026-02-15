@@ -38,6 +38,7 @@ class App {
     // Logging
     if (config.nodeEnv !== 'test') {
       this.app.use(morgan('combined', {
+        skip: (req) => req.path === '/healthcheck' || req.path === '/api/healthcheck',
         stream: { write: (message: string) => logger.info(message.trim()) }
       }));
       this.app.use(requestLogger);
