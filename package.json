@@ -15,7 +15,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@actual-app/api": "26.2.0",
+    "@actual-app/api": "26.2.1",
     "express": "^5.2.1",
     "cors": "^2.8.5",
     "helmet": "^8.1.0",
