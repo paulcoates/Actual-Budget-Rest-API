@@ -16,19 +16,19 @@
   },
   "dependencies": {
     "@actual-app/api": "26.3.0",
-    "express": "^5.2.1",
     "cors": "^2.8.5",
+    "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "morgan": "^1.10.0",
     "joi": "^18.1.1",
+    "morgan": "^1.10.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^25.5.0",
-    "@types/jest": "^30.0.0",
     "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.0",
@@ -40,9 +40,15 @@
     "typescript": "^5.3.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
-  "keywords": ["actual-budget", "webhook", "upbank", "typescript", "express"],
+  "keywords": [
+    "actual-budget",
+    "webhook",
+    "upbank",
+    "typescript",
+    "express"
+  ],
   "author": "Paul Coates",
   "license": "MIT"
 }

@@ -42,6 +42,8 @@ services:
 
 ### Local Development
 
+**Prerequisites**: Node.js >= 22.0.0 (Active LTS)
+
 1. **Clone and install dependencies:**
    ```bash
    git clone https://github.com/paulcoates/Actual-Budget-Rest-API.git
