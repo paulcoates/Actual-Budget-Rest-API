@@ -207,7 +207,7 @@ export class UpBankService {
         Buffer.from(computed, 'hex'),
         Buffer.from(signature, 'hex')
       );
-    } catch (error) {
+    } catch {
       logger.warn('Invalid UpBank webhook signature format');
       return false;
     }
