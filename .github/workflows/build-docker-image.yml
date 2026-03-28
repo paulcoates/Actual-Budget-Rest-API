@@ -2,7 +2,7 @@ name: Build Docker image (publish on main)
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
     paths:
       - 'src/**'
       - 'package.json'
@@ -10,6 +10,16 @@ on:
       - 'tsconfig*.json'
       - '.github/workflows/build-docker-image.yml'
   pull_request:
+    branches: ["**"]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/build-docker-image.yml'
+  pull_request_target:
+    if: github.event.pull_request.merged == true
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -44,6 +54,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)
 
     steps:
       - name: Checkout
@@ -68,7 +79,11 @@ jobs:
 
           if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             echo "tags=$IMAGE:${{ steps.version.outputs.version }},$IMAGE:latest" >> "$GITHUB_OUTPUT"
-            echo "push=true" >> "$GITHUB_OUTPUT"
+            if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+              echo "push=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "push=true" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "tags=$IMAGE:build-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
             echo "push=false" >> "$GITHUB_OUTPUT"
