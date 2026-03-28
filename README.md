@@ -211,12 +211,18 @@ The service will automatically:
 ## License
 
 MIT License - see LICENSE file for details.
+
+### Example Transaction Request
+
+```bash
+curl --location 'http://localhost:8080/api/transaction' \
+--header 'Content-Type: application/json' \
 --data '{
     "account_id": "9cdea6e3-4770-4b3b-8d32-XXXXXX",
     "transaction_date": "2024-04-09",
     "amount": -4499,
     "payee": "Temu",
     "notes": "",
-    "transaction_id": "29eb97e0-1d23-4440-8b89-XXXXXX"
+    "imported_id": "29eb97e0-1d23-4440-8b89-XXXXXX"
 }'
 ```
