@@ -1,4 +1,5 @@
-import * as actual from '@actual-app/api';
+// v26.4.0 exposes TypeScript source through transitive types; use runtime import to avoid compiling dependency internals.
+const actual: any = require('@actual-app/api');
 import { Transaction } from '../types';
 import { config } from '../utils/config';
 import { logger } from '../utils/logger';
