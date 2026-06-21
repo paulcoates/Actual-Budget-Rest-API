@@ -97,10 +97,44 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-export interface HealthCheckResponse {
-  status: 'ok' | 'error';
+export interface ActualServiceError {
+  code: string;
+  message: string;
+  operation: string;
+  at: string;
+}
+
+export interface ActualServiceHealth {
+  status: 'ok' | 'degraded' | 'error';
+  apiInitialized: boolean;
+  actualApiVersion: string;
+  lastSuccessfulBudgetDownloadAt: string | null;
+  lastError: ActualServiceError | null;
+}
+
+export interface LivenessResponse {
+  status: 'alive';
   timestamp: string;
   uptime: number;
-  apiInitialized: boolean;
   version: string;
+}
+
+export interface ReadinessResponse {
+  status: 'ready' | 'not_ready';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  checks: {
+    actualBudgetApi: ActualServiceHealth;
+  };
+}
+
+export interface HealthCheckResponse {
+  status: 'ok' | 'degraded' | 'error';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  checks: {
+    actualBudgetApi: ActualServiceHealth;
+  };
 }

@@ -5,18 +5,27 @@ import { UpBankService } from '../services/upBankService';
 
 // Mock the ActualBudgetService before importing the app
 jest.mock('@/services/actualBudgetService', () => {
+  const instance = {
+    initialize: jest.fn().mockResolvedValue(undefined),
+    isApiInitialized: jest.fn().mockReturnValue(true),
+    getHealthStatus: jest.fn().mockReturnValue({
+      status: 'ok',
+      apiInitialized: true,
+      actualApiVersion: '26.6.0',
+      lastSuccessfulBudgetDownloadAt: '2026-06-21T00:00:00.000Z',
+      lastError: null,
+    }),
+    addTransaction: jest.fn().mockResolvedValue(true),
+    getAccounts: jest.fn().mockResolvedValue([
+      { id: 'account1', name: 'Test Account 1' },
+      { id: 'account2', name: 'Test Account 2' }
+    ]),
+    shutdown: jest.fn().mockResolvedValue(undefined),
+  };
+
   return {
     ActualBudgetService: {
-      getInstance: jest.fn(() => ({
-        initialize: jest.fn().mockResolvedValue(undefined),
-        isApiInitialized: jest.fn().mockReturnValue(true),
-        addTransaction: jest.fn().mockResolvedValue(true),
-        getAccounts: jest.fn().mockResolvedValue([
-          { id: 'account1', name: 'Test Account 1' },
-          { id: 'account2', name: 'Test Account 2' }
-        ]),
-        shutdown: jest.fn().mockResolvedValue(undefined),
-      })),
+      getInstance: jest.fn(() => instance),
     },
   };
 });
@@ -40,6 +49,9 @@ describe('API Routes', () => {
   let server: any;
   let processWebhookMock: jest.Mock;
   let validateWebhookSignatureMock: jest.Mock;
+  let actualBudgetServiceMock: {
+    getHealthStatus: jest.Mock;
+  };
   const webhookSecret = process.env.UPBANK_WEBHOOK_SECRET || 'test-upbank-secret';
 
   beforeAll(async () => {
@@ -88,6 +100,14 @@ describe('API Routes', () => {
 
     app = new App();
     server = app.getApp();
+    const actualBudgetServiceModule = jest.requireMock('@/services/actualBudgetService') as {
+      ActualBudgetService: {
+        getInstance: jest.Mock;
+      };
+    };
+    actualBudgetServiceMock = actualBudgetServiceModule.ActualBudgetService.getInstance() as {
+      getHealthStatus: jest.Mock;
+    };
     const upBankService = UpBankService.getInstance() as unknown as {
       processWebhook: jest.Mock;
       validateWebhookSignature: jest.Mock;
@@ -101,10 +121,64 @@ describe('API Routes', () => {
   afterEach(() => {
     processWebhookMock?.mockReset();
     validateWebhookSignatureMock?.mockReset();
+    actualBudgetServiceMock.getHealthStatus.mockReturnValue({
+      status: 'ok',
+      apiInitialized: true,
+      actualApiVersion: '26.6.0',
+      lastSuccessfulBudgetDownloadAt: '2026-06-21T00:00:00.000Z',
+      lastError: null,
+    });
+  });
+
+  describe('GET /livez', () => {
+    it('should return liveness without checking Actual Budget', async () => {
+      const response = await request(server)
+        .get('/livez')
+        .expect(200);
+
+      expect(response.body.status).toBe('alive');
+      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toHaveProperty('uptime');
+      expect(response.body).toHaveProperty('version');
+    });
+  });
+
+  describe('GET /readyz', () => {
+    it('should return ready when Actual Budget API is healthy', async () => {
+      const response = await request(server)
+        .get('/readyz')
+        .expect(200);
+
+      expect(response.body.status).toBe('ready');
+      expect(response.body.checks.actualBudgetApi.status).toBe('ok');
+      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.6.0');
+    });
+
+    it('should return not_ready when Actual Budget API is degraded', async () => {
+      actualBudgetServiceMock.getHealthStatus.mockReturnValueOnce({
+        status: 'degraded',
+        apiInitialized: true,
+        actualApiVersion: '26.5.0',
+        lastSuccessfulBudgetDownloadAt: '2026-06-21T00:00:00.000Z',
+        lastError: {
+          code: 'out-of-sync-migrations',
+          message: 'Database is out of sync with migrations',
+          operation: 'downloadBudget',
+          at: '2026-06-21T04:06:15.824Z',
+        },
+      });
+
+      const response = await request(server)
+        .get('/readyz')
+        .expect(503);
+
+      expect(response.body.status).toBe('not_ready');
+      expect(response.body.checks.actualBudgetApi.lastError.code).toBe('out-of-sync-migrations');
+    });
   });
 
   describe('GET /healthcheck', () => {
-    it('should return health status', async () => {
+    it('should return detailed health status', async () => {
       const response = await request(server)
         .get('/healthcheck')
         .expect(200);
@@ -112,8 +186,9 @@ describe('API Routes', () => {
       expect(response.body).toHaveProperty('status');
       expect(response.body).toHaveProperty('timestamp');
       expect(response.body).toHaveProperty('uptime');
-      expect(response.body).toHaveProperty('apiInitialized');
       expect(response.body).toHaveProperty('version');
+      expect(response.body.checks.actualBudgetApi.status).toBe('ok');
+      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.6.0');
     });
   });
 

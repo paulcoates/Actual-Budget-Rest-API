@@ -4,20 +4,54 @@ import { UpBankService, UpBankWebhookError } from '../services/upBankService';
 import { validateTransaction } from '../utils/validation';
 import { config } from '../utils/config';
 import { logger } from '../utils/logger';
-import { ApiResponse, HealthCheckResponse, TransactionRequest, UpBankWebhook } from '../types';
+import { ApiResponse, HealthCheckResponse, LivenessResponse, ReadinessResponse, TransactionRequest, UpBankWebhook } from '../types';
 
 const router = Router();
 const actualService = ActualBudgetService.getInstance();
 const upBankService = UpBankService.getInstance();
 
-// Health check endpoint
-router.get('/healthcheck', (req: Request, res: Response): void => {
-  const healthResponse: HealthCheckResponse = {
-    status: actualService.isApiInitialized() ? 'ok' : 'error',
+const getAppVersion = (): string => process.env.npm_package_version || '1.0.0';
+
+// Liveness endpoint: process is alive and can answer HTTP requests.
+router.get('/livez', (_req: Request, res: Response): void => {
+  const response: LivenessResponse = {
+    status: 'alive',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    apiInitialized: actualService.isApiInitialized(),
-    version: process.env.npm_package_version || '1.0.0',
+    version: getAppVersion(),
+  };
+
+  res.json(response);
+});
+
+// Readiness endpoint: service can safely perform Actual Budget operations.
+router.get('/readyz', (_req: Request, res: Response): void => {
+  const actualBudgetApi = actualService.getHealthStatus();
+  const isReady = actualBudgetApi.status === 'ok';
+  const response: ReadinessResponse = {
+    status: isReady ? 'ready' : 'not_ready',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: getAppVersion(),
+    checks: {
+      actualBudgetApi,
+    },
+  };
+
+  res.status(isReady ? 200 : 503).json(response);
+});
+
+// Health check endpoint: detailed health for humans and JSON-query monitors.
+router.get('/healthcheck', (_req: Request, res: Response): void => {
+  const actualBudgetApi = actualService.getHealthStatus();
+  const healthResponse: HealthCheckResponse = {
+    status: actualBudgetApi.status,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: getAppVersion(),
+    checks: {
+      actualBudgetApi,
+    },
   };
 
   const statusCode = healthResponse.status === 'ok' ? 200 : 503;
