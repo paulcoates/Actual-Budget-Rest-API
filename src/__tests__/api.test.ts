@@ -11,7 +11,7 @@ jest.mock('@/services/actualBudgetService', () => {
     getHealthStatus: jest.fn().mockReturnValue({
       status: 'ok',
       apiInitialized: true,
-      actualApiVersion: '26.6.0',
+      actualApiVersion: '26.7.0',
       lastSuccessfulBudgetDownloadAt: '2026-06-21T00:00:00.000Z',
       lastError: null,
     }),
@@ -124,7 +124,7 @@ describe('API Routes', () => {
     actualBudgetServiceMock.getHealthStatus.mockReturnValue({
       status: 'ok',
       apiInitialized: true,
-      actualApiVersion: '26.6.0',
+      actualApiVersion: '26.7.0',
       lastSuccessfulBudgetDownloadAt: '2026-06-21T00:00:00.000Z',
       lastError: null,
     });
@@ -151,7 +151,7 @@ describe('API Routes', () => {
 
       expect(response.body.status).toBe('ready');
       expect(response.body.checks.actualBudgetApi.status).toBe('ok');
-      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.6.0');
+      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.7.0');
     });
 
     it('should return not_ready when Actual Budget API is degraded', async () => {
@@ -188,7 +188,7 @@ describe('API Routes', () => {
       expect(response.body).toHaveProperty('uptime');
       expect(response.body).toHaveProperty('version');
       expect(response.body.checks.actualBudgetApi.status).toBe('ok');
-      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.6.0');
+      expect(response.body.checks.actualBudgetApi.actualApiVersion).toBe('26.7.0');
     });
   });
 
