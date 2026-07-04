@@ -1,0 +1,46 @@
+[tools]
+node = "22.23.1"
+
+[tasks.install]
+description = "Install npm dependencies"
+run = "npm ci"
+
+[tasks.build]
+description = "Build TypeScript to JavaScript"
+run = "npm run build"
+
+[tasks.start]
+description = "Start production server"
+run = "npm run start"
+
+[tasks.dev]
+description = "Start development server with hot reload"
+run = "npm run dev"
+
+[tasks.test]
+description = "Run test suite"
+run = "npm test"
+
+[tasks."test:watch"]
+description = "Run tests in watch mode"
+run = "npm run test:watch"
+
+[tasks."test:coverage"]
+description = "Run tests with coverage report"
+run = "npm run test:coverage"
+
+[tasks.lint]
+description = "Run ESLint"
+run = "npm run lint"
+
+[tasks."lint:fix"]
+description = "Fix ESLint issues automatically"
+run = "npm run lint:fix"
+
+[tasks."type-check"]
+description = "Run TypeScript type checking"
+run = "npm run type-check"
+
+[tasks.ci]
+description = "Run CI checks (lint, type-check, test)"
+depends = ["lint", "type-check", "test"]

@@ -42,13 +42,14 @@ services:
 
 ### Local Development
 
-**Prerequisites**: Node.js >= 22.0.0 (Active LTS)
+**Prerequisites**: [mise](https://mise.jdx.dev/) (manages Node.js and project tasks)
 
 1. **Clone and install dependencies:**
    ```bash
    git clone https://github.com/paulcoates/Actual-Budget-Rest-API.git
    cd Actual-Budget-Rest-API
-   npm install
+   mise install    # installs Node.js from mise.toml
+   mise run install
    ```
 
 2. **Set up environment variables:**
@@ -59,7 +60,7 @@ services:
 
 3. **Start development server:**
    ```bash
-   npm run dev
+   mise run dev
    ```
 
 ## Configuration
@@ -147,17 +148,22 @@ X-Up-Authenticity-Signature: webhook-signature
 
 ### Available Scripts
 
+Tasks are defined in `mise.toml` and wrap the npm scripts:
+
 ```bash
-npm run build          # Build TypeScript to JavaScript
-npm run start          # Start production server
-npm run dev            # Start development server with hot reload
-npm run test           # Run test suite
-npm run test:watch     # Run tests in watch mode
-npm run test:coverage  # Run tests with coverage report
-npm run lint           # Run ESLint
-npm run lint:fix       # Fix ESLint issues automatically
-npm run type-check     # Run TypeScript type checking
+mise run build          # Build TypeScript to JavaScript
+mise run start          # Start production server
+mise run dev            # Start development server with hot reload
+mise run test           # Run test suite
+mise run test:watch     # Run tests in watch mode
+mise run test:coverage  # Run tests with coverage report
+mise run lint           # Run ESLint
+mise run lint:fix       # Fix ESLint issues automatically
+mise run type-check     # Run TypeScript type checking
+mise run ci             # Run all CI checks (lint, type-check, test)
 ```
+
+You can also use `npm run <script>` directly if you prefer.
 
 ### Project Structure
 
@@ -183,7 +189,7 @@ The project includes comprehensive tests covering:
 
 Run tests with coverage:
 ```bash
-npm run test:coverage
+mise run test:coverage
 ```
 
 ## UpBank Integration
@@ -223,7 +229,7 @@ The service will automatically:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes with tests
-4. Ensure all tests pass and linting is clean
+4. Ensure all tests pass and linting is clean (`mise run ci`)
 5. Submit a pull request
 
 ## License
