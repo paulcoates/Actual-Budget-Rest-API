@@ -34,7 +34,7 @@ services:
       - UPBANK_TOKEN=your-upbank-api-token
       - DEFAULT_ACCOUNT_ID=your-default-account-id
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/healthcheck"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/livez"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -86,10 +86,26 @@ services:
 | `LOG_SENSITIVE_DATA` | Log request bodies and other sensitive data | `false` |
 ## API Endpoints
 
+### Liveness
+```http
+GET /api/livez
+```
+
+Returns `200` when the Node.js process can answer HTTP requests. Use this for container or Kubernetes liveness checks.
+
+### Readiness
+```http
+GET /api/readyz
+```
+
+Returns `200` only when the Actual Budget API is initialized and has no known runtime errors. Returns `503` when the service is degraded, for example when the budget database has migrations newer than the bundled `@actual-app/api` package supports.
+
 ### Health Check
 ```http
 GET /api/healthcheck
 ```
+
+Returns detailed JSON for humans and monitors, including the bundled `@actual-app/api` version and the last known Actual API error. Uptime Kuma can monitor `$.status == ok` on this endpoint, or monitor `/api/readyz` for a simple HTTP `200` check.
 
 ### Manual Transaction Creation
 ```http

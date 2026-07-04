@@ -1,4 +1,5 @@
 import { ActualBudgetService } from '../services/actualBudgetService';
+const actual = require('@actual-app/api');
 
 // Mock the API module
 jest.mock('@actual-app/api');
@@ -23,6 +24,24 @@ describe('ActualBudgetService', () => {
       
       await service.initialize();
       expect(service.isApiInitialized()).toBe(firstInitialization);
+    });
+
+    it('should mark health degraded when Actual reports out-of-sync migrations during download', async () => {
+      const testService = new (ActualBudgetService as any)() as ActualBudgetService;
+      (actual.downloadBudget as jest.Mock).mockImplementationOnce(async () => {
+        console.error('Error updating Error: out-of-sync-migrations');
+      });
+
+      await testService.initialize();
+
+      expect(testService.getHealthStatus()).toMatchObject({
+        status: 'degraded',
+        apiInitialized: true,
+        lastError: {
+          code: 'out-of-sync-migrations',
+          operation: 'downloadBudget',
+        },
+      });
     });
   });
 
