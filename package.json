@@ -31,7 +31,7 @@
     "@types/node": "^26.6.2",
     "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
-    "@typescript-eslint/parser": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.1",
     "eslint": "^10.11.0",
     "jest": "^30.5.2",
     "supertest": "^7.1.3",
