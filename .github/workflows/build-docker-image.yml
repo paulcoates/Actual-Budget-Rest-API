@@ -10,6 +10,7 @@ on:
       - 'mise.toml'
       - 'mise.lock'
       - 'tsconfig*.json'
+      - 'Dockerfile'
       - '.github/workflows/build-docker-image.yml'
   pull_request:
     branches: ["**"]
@@ -20,6 +21,7 @@ on:
       - 'mise.toml'
       - 'mise.lock'
       - 'tsconfig*.json'
+      - 'Dockerfile'
       - '.github/workflows/build-docker-image.yml'
   pull_request_target:
     if: github.event.pull_request.merged == true
@@ -55,7 +57,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     needs: test
-    if: github.event_name == 'push' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)
 
     steps:
       - name: Checkout
