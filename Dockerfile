@@ -2,6 +2,9 @@ FROM node:24.11.1-alpine AS builder
 
 WORKDIR /usr/src/app
 
+# Install build dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
